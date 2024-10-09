@@ -29,9 +29,9 @@ public class ASTanalyze extends AnAction {
                     assignAnalyze(cls,psiFile, assignExpList);
                 }
             });
-            Messages.showInfoMessage("API call replacements complete!", "API Migration Tool");
+            Messages.showInfoMessage("Substitution done!", "AST Analyze Tool");
         } else {
-            Messages.showErrorDialog("Please select a Java file.", "API Migration Tool");
+            Messages.showErrorDialog("Please select a Java file.", "AST Analyze Tool");
         }
     }
 
