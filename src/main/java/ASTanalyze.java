@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.*;
 import org.jetbrains.annotations.NotNull;
+import com.intellij.openapi.application.WriteAction;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -26,6 +27,7 @@ public class ASTanalyze extends AnAction {
                 for (PsiClass cls : classes) {
                     //System.out.println("Processing class: " + cls.getName());
                     AssignExpList assignExpList = new AssignExpList();
+
                     assignAnalyze(cls,psiFile, assignExpList);
                 }
             });
@@ -35,12 +37,19 @@ public class ASTanalyze extends AnAction {
         }
     }
 
+    private void copyAssignments(PsiAssignmentExpression assignment, PsiElement parent) {
+        PsiElementFactory factory = JavaPsiFacade.getElementFactory(assignment.getProject());
+        PsiAssignmentExpression newExpression = (PsiAssignmentExpression) factory.createExpressionFromText(assignment.getText(), assignment);
+        parent.addAfter(newExpression, assignment);
+    }
+
     private void assignAnalyze(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList) {
         cls.accept(new JavaRecursiveElementVisitor() {
             //visit all assignment expressions
             @Override
             public void visitAssignmentExpression(@NotNull PsiAssignmentExpression expression) {
                 super.visitAssignmentExpression(expression);
+
                 assignExpList.addAssignment(expression);
                 PsiExpression left = expression.getLExpression();
                 PsiExpression right = expression.getRExpression();
