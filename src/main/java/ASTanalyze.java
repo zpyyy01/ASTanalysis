@@ -64,7 +64,7 @@ public class ASTanalyze extends AnAction {
                                 .createExpressionFromText(newText, null);
                         expression.replace(newElement);
                     });
-                }
+                }5
             }
         });
 
