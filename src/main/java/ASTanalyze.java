@@ -36,18 +36,7 @@ public class ASTanalyze extends AnAction {
     }
 
     private void assignAnalyze(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList) {
-        cls.accept(new JavaRecursiveElementVisitor() {
-            //visit all assignment expressions
-            @Override
-            public void visitAssignmentExpression(@NotNull PsiAssignmentExpression expression) {
-                super.visitAssignmentExpression(expression);
-                assignExpList.addAssignment(expression);
-                PsiExpression left = expression.getLExpression();
-                PsiExpression right = expression.getRExpression();
-                System.out.println(expression.getText());
-                System.out.println("left: " + left.getText() + (right == null ? "" : ", right: " + right.getText()));
-            }
-        });
+
 
         assignExpList.substituteAssignments();
     }
