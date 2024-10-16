@@ -29,30 +29,47 @@ public class AssignExpList {
     }
 
 
+
     public void substituteAssignments() {
+
         AssignExpList newAssignments = new AssignExpList();
         //copy to newAssignments
-        for(PsiAssignmentExpression assignment: assignments){
+        List<PsiAssignmentExpression> assignmentsCopy = new ArrayList<>(assignments);
+        for (PsiAssignmentExpression assignment : assignmentsCopy) {
             newAssignments.addAssignment(assignment);
         }
+
         for (PsiAssignmentExpression assignment : newAssignments.getAssignments()) {
             System.out.println("substituteAssignments: " + assignment.getText());
-            assignment.getRExpression().accept(new JavaRecursiveElementVisitor() {
+            System.out.println("re= " + assignment.getRExpression().getText());
+            PsiExpression rExpression = assignment.getRExpression();
+            rExpression.accept(new JavaRecursiveElementVisitor() {
                 @Override
                 public void visitReferenceExpression(@NotNull PsiReferenceExpression expression) {
-                    super.visitReferenceExpression(expression);
+
                     System.out.println("visitReferenceExpression: " + expression.getText());
                     for(PsiAssignmentExpression findLExpression: assignments){
                         if(findLExpression == assignment){
-                            continue;
+                            break;
                         }
                         System.out.println("findLExpression: " + findLExpression.getText());
-                        System.out.println("findLExpression.getLExpression(): " + findLExpression.getLExpression());
+                        //System.out.println("findLExpression.getLExpression(): " + findLExpression.getLExpression());
                         if(findLExpression.getLExpression().getText().equals(expression.getText())){
                             System.out.println("found: " + findLExpression.getText());
-                            expression.replace(Objects.requireNonNull(findLExpression.getRExpression()));
+                            System.out.println("expression: " + expression.getText());
+                            //add bracket to the expression
+                            PsiElementFactory factory = JavaPsiFacade.getElementFactory(expression.getProject());
+                            PsiExpression newExpression = factory.createExpressionFromText("(" + findLExpression.getRExpression().getText() + ")", expression);
+                            //replace the expression
+                            expression.replace(newExpression);
+                            System.out.println("assignment: " + assignment.getText());
+                            //print the whole tree structure of the assignment
+                            PsiElement parent = expression.getParent();
+
+                            break;
                         }
                     }
+                    //super.visitReferenceExpression(expression);
                 }
             });
 
