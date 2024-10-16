@@ -13,7 +13,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ASTanalyze extends AnAction {
@@ -29,7 +31,9 @@ public class ASTanalyze extends AnAction {
                 for (PsiClass cls : classes) {
                     //System.out.println("Processing class: " + cls.getName());
                     AssignExpList assignExpList = new AssignExpList();
-                    assignAnalyze(cls,psiFile, assignExpList);
+                    Map<String, String> variableAssignments = new HashMap<>();
+                    dataCollection(cls,psiFile, assignExpList, variableAssignments);
+                    assignSubstitution(cls,psiFile, assignExpList, variableAssignments);
                 }
             });
             Messages.showInfoMessage("Substitution done!", "AST Analyze Tool");
@@ -38,8 +42,24 @@ public class ASTanalyze extends AnAction {
         }
     }
 
-    private void assignAnalyze(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList) {
-        Map<String, String> variableAssignments = new HashMap<>();
+    private void dataCollection(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList, Map<String, String> variableAssignments) {
+
+        cls.accept(new JavaRecursiveElementVisitor() {
+            @Override
+            public void visitAssignmentExpression(@NotNull PsiAssignmentExpression expression) {
+                super.visitAssignmentExpression(expression);
+                PsiExpression left = expression.getLExpression();
+                PsiExpression right = expression.getRExpression();
+                if (left instanceof PsiReferenceExpression && right != null) {
+                    String variableName = ((PsiReferenceExpression) left).getReferenceName();
+                    variableAssignments.put(variableName, right.getText());
+                }
+            }
+        });
+    }
+    private void assignSubstitution(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList, Map<String, String> variableAssignments) {
+        //add a string list to store the Substituted expression
+        List<String> SubstitutedExpression = new ArrayList<>();
         cls.accept(new JavaRecursiveElementVisitor() {
             @Override
             public void visitAssignmentExpression(@NotNull PsiAssignmentExpression expression) {
@@ -49,25 +69,13 @@ public class ASTanalyze extends AnAction {
 
                 if (left instanceof PsiReferenceExpression && right != null) {
                     String variableName = ((PsiReferenceExpression) left).getReferenceName();
-                    variableAssignments.put(variableName, right.getText());
+                    String expressionText = right.getText();
+                    expressionText = replaceVariables(expressionText, variableAssignments);
+                    SubstitutedExpression.add(variableName + " = " + expressionText);
                 }
             }
         });
-        cls.accept(new JavaRecursiveElementVisitor() {
-            @Override
-            public void visitReferenceExpression(@NotNull PsiReferenceExpression expression) {
-                super.visitReferenceExpression(expression);
-                String newText = replaceVariables(expression.getText(), variableAssignments);
-                if (!newText.equals(expression.getText())) {
-                    WriteAction.run(() -> {
-                        PsiElement newElement = PsiElementFactory.getInstance(psiFile.getProject())
-                                .createExpressionFromText(newText, null);
-                        expression.replace(newElement);
-                    });
-                }5
-            }
-        });
-
+        Messages.showInfoMessage("Substituted Expression: " + SubstitutedExpression, "AST Analyze Tool");
     }
     private String replaceVariables(String expressionText, Map<String, String> variableAssignments) {
         for (Map.Entry<String, String> entry : variableAssignments.entrySet()) {
