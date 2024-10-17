@@ -33,7 +33,7 @@ public class ASTanalyze extends AnAction {
                     AssignExpList assignExpList = new AssignExpList();
                     Map<String, String> variableAssignments = new HashMap<>();
                     dataCollection(cls,psiFile, assignExpList, variableAssignments);
-                    assignSubstitution(cls,psiFile, assignExpList, variableAssignments);
+                    //assignSubstitution(cls,psiFile, assignExpList, variableAssignments);
                 }
             });
             Messages.showInfoMessage("Substitution done!", "AST Analyze Tool");
@@ -43,19 +43,20 @@ public class ASTanalyze extends AnAction {
     }
 
     private void dataCollection(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList, Map<String, String> variableAssignments) {
-
         cls.accept(new JavaRecursiveElementVisitor() {
             @Override
             public void visitAssignmentExpression(@NotNull PsiAssignmentExpression expression) {
                 super.visitAssignmentExpression(expression);
                 PsiExpression left = expression.getLExpression();
                 PsiExpression right = expression.getRExpression();
+                assignSubstitution(cls, psiFile, assignExpList, variableAssignments);
                 if (left instanceof PsiReferenceExpression && right != null) {
                     String variableName = ((PsiReferenceExpression) left).getReferenceName();
                     variableAssignments.put(variableName, right.getText());
                 }
             }
         });
+
     }
     private void assignSubstitution(PsiClass cls, PsiFile psiFile, AssignExpList assignExpList, Map<String, String> variableAssignments) {
         //add a string list to store the Substituted expression
@@ -72,6 +73,11 @@ public class ASTanalyze extends AnAction {
                     String expressionText = right.getText();
                     expressionText = replaceVariables(expressionText, variableAssignments);
                     SubstitutedExpression.add(variableName + " = " + expressionText);
+                }
+                //update map using the new expression
+                for (String expressionText : SubstitutedExpression) {
+                    String[] parts = expressionText.split("=");
+                    variableAssignments.put(parts[0].trim(), parts[1].trim());
                 }
             }
         });
